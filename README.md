@@ -7,6 +7,7 @@
 5. Spring Data JPA
 
 **Sign Up RestAPI endpoint** - localhost:8080/sign-up
+
 **Login/Authentication RestAPI endpoint** - localhost:8080/authenticate
 
 
