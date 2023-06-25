@@ -2,6 +2,7 @@ package com.example.loginsignupjwt.controller;
 
 import com.example.loginsignupjwt.dto.requestDto.SignupDTO;
 import com.example.loginsignupjwt.dto.responseDto.UserDTO;
+import com.example.loginsignupjwt.exception.UserAlreadyPresentException;
 import com.example.loginsignupjwt.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,11 +18,14 @@ public class SignUpController {
     private AuthService authService;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> signupUser(@RequestBody SignupDTO signUpDto) {
-        UserDTO createdUser = authService.createUser(signUpDto);
-        if (createdUser == null){
-            return new ResponseEntity<>("User not created, come again later!", HttpStatus.BAD_REQUEST);
+    public ResponseEntity<?> signupUser(@RequestBody SignupDTO signupDTO) {
+        try {
+            UserDTO createdUser = authService.createUser(signupDTO);
+            return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+        } catch (UserAlreadyPresentException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 }
