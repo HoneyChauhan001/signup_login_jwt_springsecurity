@@ -2,10 +2,15 @@ package com.example.loginsignupjwt.controller;
 
 import com.example.loginsignupjwt.dto.requestDto.AuthenticationDTO;
 import com.example.loginsignupjwt.dto.responseDto.AuthenticationResponseDTO;
+import com.example.loginsignupjwt.exception.UserIsDisabledException;
+import com.example.loginsignupjwt.exception.WrongCredintialsException;
+import com.example.loginsignupjwt.service.AuthenticationService;
 import com.example.loginsignupjwt.service.impl.UserDetailsServiceImpl;
 import com.example.loginsignupjwt.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -20,33 +25,22 @@ import java.io.IOException;
 
 @RestController
 public class AuthenticationController {
-
     @Autowired
-    private JwtUtil jwtUtil;
+    AuthenticationService authenticationService;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
-    private UserDetailsServiceImpl userDetailsService;
 
     @PostMapping("/authenticate")
-    public AuthenticationResponseDTO createAuthenticationToken(@RequestBody AuthenticationDTO authenticationDTO, HttpServletResponse response) throws BadCredentialsException, DisabledException, UsernameNotFoundException, IOException {
+    public ResponseEntity createAuthenticationToken(@RequestBody AuthenticationDTO authenticationDTO, HttpServletResponse response) throws IOException {
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(authenticationDTO.getEmail(), authenticationDTO.getPassword()));
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Incorrect username or password!");
-        } catch (DisabledException disabledException) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "User is not activated");
-            return null;
+            AuthenticationResponseDTO authenticationResponseDTO = authenticationService.createJWTToken(authenticationDTO);
+            return new ResponseEntity<>(authenticationResponseDTO, HttpStatus.OK);
+        } catch (WrongCredintialsException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (UserIsDisabledException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        } catch (UsernameNotFoundException e){
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
-
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(authenticationDTO.getEmail());
-
-        final String jwt = jwtUtil.generateToken(userDetails.getUsername());
-
-        return new AuthenticationResponseDTO(jwt);
-
     }
 
 }
